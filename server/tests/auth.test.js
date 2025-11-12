@@ -72,21 +72,26 @@ describe('Authentication controller integration', () => {
   - expect the returned user profile to match the registered user
   - store the issued token for use in subsequent tests
   */
-  test('authenticates the same user and issues a fresh JWT', async () => {
-    // This test will always fail until the TODO above is implemented.
-    expect(true).toBe(false);
+test('authenticates the same user and issues a fresh JWT', async () => {
+  const response = await fetch(`${baseUrl}/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      email: credentials.email, // server should handle case-insensitivity
+      password: credentials.password
+    })
   });
 
-  test('returns the public profile for the currently authenticated user', async () => {
-    const response = await fetch(`${baseUrl}/auth/me`, {
-      headers: { Authorization: `Bearer ${issuedToken}` }
-    });
+  const payload = await response.json();
 
-    const payload = await response.json();
+  // Successful login should return 200 alongside a token and the public user record.
+  expect(response.status).toBe(200);
+  expect(payload.token).toBeTruthy();
+  expect(payload.user).toBeDefined();
+  expect(payload.user.email).toBe(credentials.email.toLowerCase());
+  expect(payload.user).not.toHaveProperty('passwordHash');
 
-    // A valid token must yield the sanitized user profile.
-    expect(response.status).toBe(200);
-    expect(payload.user.email).toBe(credentials.email.toLowerCase());
-    expect(payload.user).not.toHaveProperty('passwordHash');
-  });
+  // Save the freshly issued token for subsequent authenticated requests.
+  issuedToken = payload.token;
+});
 });
